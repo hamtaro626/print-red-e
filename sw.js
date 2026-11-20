@@ -5,7 +5,7 @@
    edited. This way an online phone always gets the current version, and an
    offline one still opens the app (all the work happens on the device anyway). */
 
-const CACHE = 'print-red-e-v1';
+const CACHE = 'print-red-e-v2';
 
 // addAll is all-or-nothing: one 404 here rejects the install and the app loses
 // offline support entirely. Every path in this list has to exist.
@@ -20,7 +20,8 @@ const SHELL = [
   'manifest.webmanifest',
   'icon-192.png',
   'icon-512.png',
-  'apple-touch-icon.png'
+  'apple-touch-icon.png',
+  'favicon.ico'
 ];
 
 self.addEventListener('install', event => {

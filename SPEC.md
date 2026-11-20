@@ -1,4 +1,12 @@
-# print-Red-E — v0.4
+# print-Red-E — v0.5
+
+## 2026-11-20 — v0.5: a tab icon
+
+- Added `favicon.ico` (16/32/48 px from the logo) and linked it first.
+  Safari showed a plain letter in the tab instead of the logo; the .ico is
+  the format every browser looks for, Safari included. The PNG icon stays
+  for browsers that prefer it, and the home-screen icon is unchanged.
+- The service worker caches the new file (cache renamed to `v2`).
 
 ## 2026-11-20 — v0.4: metal prints, puzzles, magnets, mouse pads, ornaments, coasters, phone cases
 
@@ -173,13 +181,16 @@ one in an editor.
 
 `assets/logo-source.png` (2000×2000, opaque, background `#EDECEA`) is the
 source. `logo.png` (600), `icon-512.png`, `icon-192.png` and
-`apple-touch-icon.png` (180) are uncropped downscales: `sips -Z <size>`. The
+`apple-touch-icon.png` (180) are uncropped downscales: `sips -Z <size>`.
+`favicon.ico` (the browser-tab icon) holds 16, 32 and 48 px downscales of
+the same source, packed as PNGs inside the .ico; metadata chunks are dropped.
+All icons are fully opaque, so iOS has nothing to fill with black. The
 page colours are taken from the logo: paper `#EDECEA`, ink `#222222`, red
 `#FF3131` (highlight only; too faint on the paper for text).
 
 ## Tests
 
-`test/verify.sh` runs 122 checks in three stages:
+`test/verify.sh` runs 123 checks in three stages:
 
 1. **73 checks in Node** (`test/dpi.test.js`). 51 byte-level checks on six
    header layouts seen in the wild macOS's own `sips` is the judge for DPI and pixel size, not our
@@ -190,7 +201,8 @@ page colours are taken from the logo: paper `#EDECEA`, ink `#222222`, red
    thresholds, mug/phone-case/mouse-pad orientation, the tote's 15×18
    photo area, and which sizes are marked as estimates. 2 on the service
    worker's file list.
-2. **43 page checks** in headless Chrome: picks files through the real input,
+2. **44 page checks** in headless Chrome: the tab and home-screen icons
+   load, picks files through the real input,
    drops one on the drop zone, checks rows, verdicts and the batch tally,
    switching the item to a pillow (verdicts, chips and key all update, choice
    remembered), thumbnails,

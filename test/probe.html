@@ -54,6 +54,16 @@ async function fixture(name, type) {
   check('title is print-Red-E', d.title === 'print-Red-E', d.title);
   const logo = d.querySelector('img.logo');
   check('logo loads', await until(() => logo.complete && logo.naturalWidth === 600));
+  // Tab icon (favicon.ico for Safari and older browsers, a PNG for the rest)
+  // and the iPhone home-screen icon: each must load and decode at its size.
+  const icons = [...d.querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]')].map(l => l.getAttribute('href'));
+  const sizes = await Promise.all(icons.map(href => new Promise(r => {
+    const im = new Image();
+    im.onload = () => r(`${href}:${im.naturalWidth}`);
+    im.onerror = () => r(`${href}:broken`);
+    im.src = new URL(href, f.src).href;
+  })));
+  check('tab and home-screen icons load', sizes.join(' ') === 'favicon.ico:48 icon-192.png:192 apple-touch-icon.png:180', sizes.join(' '));
   check('starts with results hidden', d.getElementById('results').hidden);
 
   // Pretend to be a phone that can share files, before any photos arrive.

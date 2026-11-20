@@ -43,8 +43,8 @@ sips -g dpiWidth -g dpiHeight ~/Downloads/your-photo.jpg
 test/verify.sh
 ```
 
-122 checks: 73 in Node (DPI bytes, zip, print-size rules, service worker
-list), 43 driving the real page in headless Chrome, and 6 on the zip that page
+123 checks: 73 in Node (DPI bytes, zip, print-size rules, service worker
+list), 44 driving the real page in headless Chrome, and 6 on the zip that page
 downloads. Needs Node and Google
 Chrome; everything else (`sips`, `ditto`, `python3`) ships with macOS.
 
