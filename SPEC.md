@@ -1,4 +1,33 @@
-# print-Red-E — v0.3
+# print-Red-E — v0.4
+
+## 2026-11-20 — v0.4: metal prints, puzzles, magnets, mouse pads, ornaments, coasters, phone cases
+
+Sizes from Shutterfly product pages Alec looked at, plus labelled estimates
+for the small items Shutterfly doesn't give a size for.
+
+| Product | Sizes | Basis |
+|---|---|---|
+| Metal print | 8×10, 10×14, 12×12, 16×16, 16×20, 20×30, 24×36, 30×40 | Shutterfly "Photo Gallery Metal Print" page |
+| Puzzle | 10×14, 16×20, 20×30 | Shutterfly "Photo Hero Gallery Puzzle" page. Piece count doesn't affect the print |
+| Mouse pad | 7.75″ × 9.25″, landscape only | Shutterfly "Gallery of Six Mouse Pad" page (sold as "8×9") |
+| Tote bag | 15×18, one photo across the whole face | Shutterfly "Upload Your Own Design" cotton tote page ("Measures 15″ x 18″", "For 1 photo") |
+| Metal ornament | square 3.125″, round 3.25″, bracket 3×4 (landscape), gift tag 3×5 (portrait) | Shutterfly "Falling Snowflakes" metal ornament page. Round is rated by the circle's bounding square |
+| Magnet | 3×3, 3×5, 4×5.5 | Shutterfly "Upload Your Own Design" magnet page (landscape and portrait versions exist) |
+| Phone case | ~3″ × 6″, portrait only | **Estimate, on purpose.** Cases come in a size per phone model; one rough iPhone-back size is enough for a verdict |
+| Coaster | 4×4 | Shutterfly "Upload Your Own Design Coasters" page |
+
+Estimated sizes say "(estimated size)" in the picker and in each verdict.
+Thresholds: metal prints, puzzles, magnets, ornaments, phone cases and coasters use
+the paper tier (300/150): smooth surfaces looked at up close. Mouse pads use
+the fabric tier (200/100), since the top is printed fabric. The picker's
+groups follow Shutterfly's menu loosely: Prints & wall art, Drinkware & home,
+Blankets & pillows, Gifts & keepsakes, Accessories & tech. Only the phone
+case is still an estimate.
+
+**Hosting:** GitHub Pages at `hamtaro626.github.io/print-red-e`, published on
+push to `main`. Chosen over Cloudflare Pages because nothing in the repo is
+private (photos never leave the device), and push-to-publish is the simplest
+routine. The repo is public, which GitHub Pages requires on the free plan.
 
 ## 2026-11-19 — v0.3: pick what you're printing, see which photos work
 
@@ -122,9 +151,14 @@ one in an editor.
   "Gallery of Six" style designs give each photo a fraction of the space;
   the page says to check those against a smaller size. Worth doing properly
   only if collages turn out to be the common case.
-- **No puzzles, ornaments, mouse pads, phone cases, metal or glass prints
-  yet.** Their sizes weren't confirmed from Shutterfly's pages. Adding one is
-  a single line in `prints.js` once the size is known.
+- **No scraping Shutterfly for a full catalogue.** Its terms most likely
+  forbid automated crawling (the usual clause; the live terms page is the
+  authority), the pages are built by JavaScript, and sizes change rarely.
+  Sizes get added by hand from product pages instead.
+- **Not every Shutterfly product.** Glass prints, framed prints,
+  apparel, calendars and photo books aren't in the picker. Adding one is a
+  single line in `prints.js` once its size is known; replacing an estimate
+  with a real size is the same.
 - **No per-lab rules.** Two threshold tiers. Labs differ a little; these are
   the common ground.
 - **No DPI other than 300.** One constant (`TARGET_DPI` in `app.js`). Add a
@@ -145,17 +179,18 @@ page colours are taken from the logo: paper `#EDECEA`, ink `#222222`, red
 
 ## Tests
 
-`test/verify.sh` runs 112 checks in three stages:
+`test/verify.sh` runs 122 checks in three stages:
 
-1. **66 checks in Node** (`test/dpi.test.js`). 51 byte-level checks on six
+1. **73 checks in Node** (`test/dpi.test.js`). 51 byte-level checks on six
    header layouts seen in the wild macOS's own `sips` is the judge for DPI and pixel size, not our
    own reader. Also: image data byte-identical, input untouched, running twice
    changes nothing, PNG checksums valid, and the zip extracts byte-for-byte
    with `ditto` (what Finder uses). 13 on the print-size rules, including
    Shutterfly's 4×6 minimum landing exactly on "sharp", fabric vs paper
-   thresholds, and mug/tote orientation. 2 on the service
+   thresholds, mug/phone-case/mouse-pad orientation, the tote's 15×18
+   photo area, and which sizes are marked as estimates. 2 on the service
    worker's file list.
-2. **40 page checks** in headless Chrome: picks files through the real input,
+2. **43 page checks** in headless Chrome: picks files through the real input,
    drops one on the drop zone, checks rows, verdicts and the batch tally,
    switching the item to a pillow (verdicts, chips and key all update, choice
    remembered), thumbnails,

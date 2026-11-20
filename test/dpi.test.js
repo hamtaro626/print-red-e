@@ -186,8 +186,24 @@ check('prints: 48MP on a 60x80 fleece blanket is good (100 PPI)',
   fitAt(8064, 6048, 'fleece', '60\u00d780').rating === 'good');
 check('prints: a mug only wraps sideways, so orientation matters',
   fitAt(4032, 3024, 'mug', '11 oz').ppi === 474 && fitAt(3024, 4032, 'mug', '11 oz').ppi === 355);
-check('prints: a tote stands upright, so orientation matters',
-  fitAt(3000, 2000, 'tote', '15\u00d718').ppi !== fitAt(2000, 3000, 'tote', '15\u00d718').ppi);
+check('prints: a phone case stands upright, so orientation matters',
+  fitAt(3024, 4032, 'phone', 'about 3\u00d76').ppi === 672 && fitAt(4032, 3024, 'phone', 'about 3\u00d76').ppi === 504);
+check('prints: a mouse pad is landscape only (9.25 wide x 7.75 tall)',
+  fitAt(4032, 3024, 'mousepad', '8\u00d79').ppi === 390 && fitAt(3024, 4032, 'mousepad', '8\u00d79').ppi === 326);
+check('prints: the tote photo fills the whole 15x18 face (12MP is sharp at 201 PPI)',
+  fitAt(4032, 3024, 'tote', '15\u00d718').ppi === 201 && fitAt(4032, 3024, 'tote', '15\u00d718').rating === 'sharp');
+check('prints: metal uses paper thresholds, canvas doesn\'t (12MP at 20x30)',
+  fitAt(4032, 3024, 'metal', '20\u00d730').rating === 'low' && fitAt(4032, 3024, 'canvas', '20\u00d730').rating === 'good');
+check('prints: puzzles come in Shutterfly\'s three sizes',
+  PRINTS.product('puzzle').sizes.map(s => s.label).join(' ') === '10\u00d714 16\u00d720 20\u00d730');
+check('prints: estimated sizes are marked as estimates',
+  ['phone'].every(id => PRINTS.product(id).approx)
+  && ['print', 'canvas', 'metal', 'puzzle', 'mousepad', 'coaster', 'ornament', 'magnet', 'tote']
+    .every(id => !PRINTS.product(id).approx));
+check('prints: ornament shapes keep their orientation (bracket is landscape)',
+  fitAt(4032, 3024, 'ornament', 'bracket').ppi === 1008 && fitAt(3024, 4032, 'ornament', 'bracket').ppi === 756);
+check('prints: a phone-sized screenshot (1080x1920) is only good on a 4x5.5 magnet',
+  fitAt(1080, 1920, 'magnet', '4\u00d75.5').rating === 'good' && fitAt(1080, 1920, 'magnet', '3\u00d75').rating === 'sharp');
 check('prints: unknown product falls back to photo prints', PRINTS.product('nope').id === 'print');
 const canvasAreas = PRINTS.product('canvas').sizes.map(s => s.w * s.h);
 check('prints: Shutterfly\'s 13 canvas sizes, smallest first',

@@ -109,7 +109,13 @@ async function fixture(name, type) {
     ['mug:11 oz', 'fleece:50\u00d760', 'woven:60\u00d780', 'pillow:16\u00d716', 'tote:15\u00d718', 'canvas:36\u00d736']
       .every(v => [...sel.options].some(o => o.value === v)));
   check('picker groups items like Shutterfly\'s menu',
-    [...sel.querySelectorAll('optgroup')].map(g => g.label).join('|') === 'Prints & wall art|Drinkware|Blankets & pillows|Bags');
+    [...sel.querySelectorAll('optgroup')].map(g => g.label).join('|')
+      === 'Prints & wall art|Drinkware & home|Blankets & pillows|Gifts & keepsakes|Accessories & tech');
+  check('picker has metal prints, puzzles, magnets, mouse pads, ornaments, phone cases',
+    ['metal:30\u00d740', 'puzzle:20\u00d730', 'magnet:4\u00d75.5', 'mousepad:8\u00d79', 'ornament:gift tag', 'phone:about 3\u00d76']
+      .every(v => [...sel.options].some(o => o.value === v)));
+  check('estimated sizes say so in the picker',
+    [...sel.options].find(o => o.value === 'phone:about 3\u00d76')?.textContent === 'about 3\u00d76 phone case (estimated size)');
   sel.value = 'pillow:16\u00d716';
   sel.dispatchEvent(new Event('change'));
   const c2 = row('c.jpg');
@@ -120,6 +126,11 @@ async function fixture(name, type) {
     pillowChips === '12\u00d716:good 16\u00d716:good 18\u00d718:good 20\u00d720:good', pillowChips);
   check('pillow: key shows fabric thresholds', /200\+ pixels per inch/.test(text(d, '#key')) && /Fabric and canvas/.test(text(d, '#key')));
   check('choice is remembered on this device', w.localStorage.getItem('print-red-e/target') === 'pillow:16\u00d716');
+  sel.value = 'phone:about 3\u00d76';
+  sel.dispatchEvent(new Event('change'));
+  check('estimated sizes say so in each verdict',
+    text(row('c.jpg'), '.verdict') === 'Sharp about 3\u00d76 phone case (estimated size) \u00b7 333 pixels per inch',
+    text(row('c.jpg'), '.verdict'));
   sel.value = 'print:4\u00d76';
   sel.dispatchEvent(new Event('change'));
   w.localStorage.removeItem('print-red-e/target');

@@ -19,7 +19,7 @@ for (const group of new Set(PRINTS.PRODUCTS.map(p => p.group))) {
   const og = document.createElement('optgroup');
   og.label = group;
   for (const p of PRINTS.PRODUCTS.filter(p => p.group === group)) {
-    for (const s of p.sizes) og.append(new Option(`${s.label} ${p.name}`, `${p.id}:${s.label}`));
+    for (const s of p.sizes) og.append(new Option(`${s.label} ${p.name}${p.approx ? ' (estimated size)' : ''}`, `${p.id}:${s.label}`));
   }
   target.append(og);
 }
@@ -156,7 +156,8 @@ function row(item) {
     const verdict = li.querySelector('.verdict');
     verdict.innerHTML = `<span class="chip ${pick.rating}"></span> <span class="what"></span>`;
     verdict.querySelector('.chip').textContent = PRINTS.LABELS[pick.rating];
-    verdict.querySelector('.what').textContent = `${label} ${p.name} \u00b7 ${pick.ppi} pixels per inch`;
+    verdict.querySelector('.what').textContent =
+      `${label} ${p.name}${p.approx ? ' (estimated size)' : ''} \u00b7 ${pick.ppi} pixels per inch`;
     li.querySelector('.fit').replaceChildren(...fits.map(f => {
       const chip = document.createElement('li');
       chip.className = `chip ${f.rating}${f === pick ? ' chosen' : ''}`;

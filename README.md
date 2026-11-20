@@ -1,7 +1,7 @@
 # print-Red-E
 
-Pick a batch of photos and what you're printing (a 4×6, a canvas, a mug, a
-blanket...). See which photos have enough pixels for it, and get them back
+Pick a batch of photos and what you're printing (a 4×6, a canvas, a metal
+print, a mug, a blanket, a puzzle, a magnet, an ornament...). See which photos have enough pixels for it, and get them back
 labelled 300 DPI. Pixels untouched, nothing uploaded.
 
 Static files: HTML, CSS, three scripts, a service worker. No build step, no dependencies, no
@@ -22,7 +22,7 @@ home screen and offline use need HTTPS, so those only work once deployed.
 
 ## On an iPhone
 
-1. Open the deployed site in Safari, tap Share → **Add to Home Screen**.
+1. Open <https://hamtaro626.github.io/print-red-e/> in Safari, tap Share → **Add to Home Screen**.
 2. **Choose photos** → pick from your library. Safari hands the page JPEG
    copies of iPhone (HEIC) photos.
 3. **Save to Photos** opens the share sheet; choose *Save N Images*. Or
@@ -43,10 +43,15 @@ sips -g dpiWidth -g dpiHeight ~/Downloads/your-photo.jpg
 test/verify.sh
 ```
 
-112 checks: 66 in Node (DPI bytes, zip, print-size rules, service worker
-list), 40 driving the real page in headless Chrome, and 6 on the zip that page
+122 checks: 73 in Node (DPI bytes, zip, print-size rules, service worker
+list), 43 driving the real page in headless Chrome, and 6 on the zip that page
 downloads. Needs Node and Google
 Chrome; everything else (`sips`, `ditto`, `python3`) ships with macOS.
+
+## Deploy
+
+Hosted on GitHub Pages from the `main` branch, repo root. Pushing to `main`
+publishes it; the site updates a minute or so later.
 
 ## Files
 
