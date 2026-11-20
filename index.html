@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>print-Red-E</title>
+  <meta name="description" content="Set a batch of photos to 300 DPI and see what size each one can print. Nothing is uploaded.">
+  <meta name="theme-color" content="#edecea">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="print-Red-E">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1><img class="logo" src="logo.png" alt="print-Red-E" width="600" height="600"></h1>
+      <p class="lede">Get a batch of photos ready to print: set to <strong>300&nbsp;DPI</strong>,
+        with the print sizes each one can handle.</p>
+    </header>
+
+    <label id="drop" class="drop">
+      <input id="pick" type="file" accept="image/jpeg,image/png" multiple>
+      <span class="drop-main">Choose photos</span>
+      <span class="drop-sub">or drag them here &middot; JPEG or PNG</span>
+    </label>
+
+    <p class="privacy">Your photos stay on this device. Nothing is uploaded.</p>
+
+    <div class="target">
+      <label for="target">What are you printing?</label>
+      <select id="target"></select>
+      <p class="target-note">Assumes one photo fills the whole item. In a collage
+        each photo is smaller, so check it against a smaller size.</p>
+    </div>
+
+    <section id="results" hidden>
+      <div class="bar">
+        <p id="summary"></p>
+        <div class="actions">
+          <button id="clear" type="button" class="quiet">Clear</button>
+          <button id="share" type="button" hidden>Save to Photos</button>
+          <button id="download-all" type="button">Download all (.zip)</button>
+        </div>
+      </div>
+      <p id="tally"></p>
+      <p id="notice" class="notice" hidden></p>
+      <ul id="list"></ul>
+      <p id="key" class="key"></p>
+    </section>
+
+    <details class="about">
+      <summary>What does 300 DPI actually change?</summary>
+      <p>Only a label inside the file. Your pixels, sharpness and quality stay
+        exactly the same; the photo is not re-saved or recompressed. Some print
+        shops and publishers check the label, so it's worth having right.</p>
+      <p><strong>What decides print quality is the number of pixels.</strong> A
+        lab spreads your photo's pixels across the paper you order, so a
+        4000-pixel photo labelled 72&nbsp;DPI prints exactly as well as the same
+        photo labelled 300. That's why the print sizes for each photo come from
+        its pixels, not its DPI. Shutterfly, for one, judges resolution from
+        pixels against the print size you pick.</p>
+      <p>Ratings assume the lab crops the photo to fill the item, which is the
+        usual default. Cropping a photo yourself uses fewer of its pixels, so it
+        lowers what it can print.</p>
+      <p>Blankets, pillows, tote bags and canvas need fewer pixels than paper
+        (200 per inch for sharp instead of 300): the weave or canvas texture
+        softens fine detail, and they're usually seen from further away. These
+        are rules of thumb; Shutterfly's own low-resolution warning has the
+        final say.</p>
+    </details>
+  </main>
+
+  <script src="dpi.js"></script>
+  <script src="prints.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

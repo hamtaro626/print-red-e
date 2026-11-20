@@ -1,0 +1,192 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>print-Red-E probe</title></head>
+<body>
+<div id="out">running</div>
+<script>
+/* Loads index.html in an iframe and drives the real UI: picks files through
+   the actual <input>, drops a file onto the drop zone, shares to a stubbed
+   share sheet, clicks Download all, and Clear. The zip it captures is POSTed
+   back so verify.sh can open it with Finder's own unzip and check every photo
+   with sips.
+
+   Fixtures are written to __fixtures/ by verify.sh for the length of a run. */
+
+const results = [];
+const check = (name, cond, why = '') => results.push([cond ? 'PASS' : 'FAIL', name, cond ? '' : why]);
+
+let reported = false;
+function report(watchdogReason) {
+  if (reported) return;
+  reported = true;
+  if (watchdogReason) check('probe finished', false, watchdogReason);
+  const failed = results.filter(r => r[0] === 'FAIL').length;
+  const text = results.map(r => `${r[0]} ${r[1]}${r[2] ? ' -- ' + r[2] : ''}`).join('\n')
+    + `\nTOTAL ${results.length} FAILED ${failed}`;
+  document.getElementById('out').textContent = text;
+  fetch('/__results', { method: 'POST', body: text });
+}
+setTimeout(() => report('watchdog fired: probe did not finish within 20s'), 20000);
+window.addEventListener('error', e => check('no uncaught error', false, e.message));
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function until(cond, ms = 5000) {
+  for (const end = Date.now() + ms; Date.now() < end; await sleep(50)) if (cond()) return true;
+  return false;
+}
+
+async function fixture(name, type) {
+  const blob = await (await fetch(`__fixtures/${name}`)).blob();
+  return new File([blob], name, { type });
+}
+
+(async () => {
+  const f = document.createElement('iframe');
+  f.style.cssText = 'width:800px;height:900px;border:0';
+  f.src = 'index.html';
+  await new Promise(r => { f.onload = r; document.body.appendChild(f); });
+  const d = f.contentDocument, w = f.contentWindow;
+  w.addEventListener('error', e => check('no uncaught error in page', false, e.message));
+  const rows = () => [...d.querySelectorAll('#list > li')];
+  const row = name => rows().find(li => li.querySelector('.name').textContent === name);
+  const text = (li, sel) => li?.querySelector(sel)?.textContent;
+
+  check('title is print-Red-E', d.title === 'print-Red-E', d.title);
+  const logo = d.querySelector('img.logo');
+  check('logo loads', await until(() => logo.complete && logo.naturalWidth === 600));
+  check('starts with results hidden', d.getElementById('results').hidden);
+
+  // Pretend to be a phone that can share files, before any photos arrive.
+  let shared = null, shareFails = null;
+  Object.defineProperty(w.navigator, 'canShare', { value: () => true, configurable: true });
+  Object.defineProperty(w.navigator, 'share', { configurable: true, value: async data => {
+    if (shareFails) throw shareFails;
+    shared = data;
+  } });
+
+  // Pick five files through the real file input.
+  const files = [
+    await fixture('a.png', 'image/png'),
+    await fixture('b.jpg', 'image/jpeg'),
+    await fixture('c.jpg', 'image/jpeg'),
+    await fixture('notes.txt', 'text/plain'),
+    await fixture('IMG_0001.HEIC', 'image/heic'),
+  ];
+  const dt = new DataTransfer();
+  files.forEach(file => dt.items.add(file));
+  const pick = d.getElementById('pick');
+  pick.files = dt.files;
+  pick.dispatchEvent(new Event('change'));
+
+  check('five files listed', await until(() => rows().length === 5), `got ${rows().length}`);
+  check('results now visible', !d.getElementById('results').hidden);
+  const summary = d.getElementById('summary').textContent;
+  check('summary counts ready and skipped', summary === '3 photos ready at 300 DPI \u00b7 2 skipped', summary);
+
+  const b = row('b.jpg');
+  check('600px jpg: shows it was 72 DPI', text(b, '.change') === 'Was 72 DPI \u2192 now 300', text(b, '.change'));
+  check('600px jpg: shows pixels and inches at 300',
+    text(b, '.size') === '600 \u00d7 400 px \u00b7 2 \u00d7 1.33 in at 300 DPI', text(b, '.size'));
+  check('defaults to a 4x6 photo print', d.getElementById('target').value === 'print:4\u00d76', d.getElementById('target').value);
+  check('600px jpg: too small for a 4x6',
+    text(b, '.verdict') === 'Too small 4\u00d76 photo print \u00b7 100 pixels per inch', text(b, '.verdict'));
+
+  // 3000x2000: 4x6 at 500 PPI, 5x7 at 400, 8x10 at 250, 12x18 at 166, 16x20 at 125.
+  const c = row('c.jpg');
+  check('3000px jpg: sharp for a 4x6',
+    text(c, '.verdict') === 'Sharp 4\u00d76 photo print \u00b7 500 pixels per inch', text(c, '.verdict'));
+  check('batch tally for the chosen item', text(d, '#tally') === '4\u00d76 photo print: 1 sharp \u00b7 2 too small', text(d, '#tally'));
+  check('chosen size is ringed', c?.querySelector('.fit .chip.chosen')?.textContent === '4\u00d76');
+  const chips = [...(c?.querySelectorAll('.fit .chip') || [])];
+  const ratings = chips.map(ch => `${ch.textContent}:${ch.classList[1]}`).join(' ');
+  check('3000px jpg: a chip per print size, rated',
+    ratings === '4\u00d76:sharp 5\u00d77:sharp 8\u00d710:good 11\u00d714:good 12\u00d718:good 16\u00d720:low 20\u00d730:low 24\u00d736:low', ratings);
+  check('chip tooltip gives the PPI', chips[2]?.title === '250 pixels per inch at 8\u00d710', chips[2]?.title);
+
+  // Switch to a 16x16 pillow: fabric thresholds (200/100), pillow sizes.
+  const sel = d.getElementById('target');
+  check('picker offers mugs, blankets, pillows and totes',
+    ['mug:11 oz', 'fleece:50\u00d760', 'woven:60\u00d780', 'pillow:16\u00d716', 'tote:15\u00d718', 'canvas:36\u00d736']
+      .every(v => [...sel.options].some(o => o.value === v)));
+  check('picker groups items like Shutterfly\'s menu',
+    [...sel.querySelectorAll('optgroup')].map(g => g.label).join('|') === 'Prints & wall art|Drinkware|Blankets & pillows|Bags');
+  sel.value = 'pillow:16\u00d716';
+  sel.dispatchEvent(new Event('change'));
+  const c2 = row('c.jpg');
+  check('pillow: verdict updates without re-adding photos',
+    text(c2, '.verdict') === 'Good 16\u00d716 pillow \u00b7 125 pixels per inch', text(c2, '.verdict'));
+  const pillowChips = [...c2.querySelectorAll('.fit .chip')].map(ch => `${ch.textContent}:${ch.classList[1]}`).join(' ');
+  check('pillow: chips switch to pillow sizes; 100 PPI at 20x20 still counts as good',
+    pillowChips === '12\u00d716:good 16\u00d716:good 18\u00d718:good 20\u00d720:good', pillowChips);
+  check('pillow: key shows fabric thresholds', /200\+ pixels per inch/.test(text(d, '#key')) && /Fabric and canvas/.test(text(d, '#key')));
+  check('choice is remembered on this device', w.localStorage.getItem('print-red-e/target') === 'pillow:16\u00d716');
+  sel.value = 'print:4\u00d76';
+  sel.dispatchEvent(new Event('change'));
+  w.localStorage.removeItem('print-red-e/target');
+
+  const png = row('a.png');
+  check('png: says no DPI was set', text(png, '.change') === 'Had no DPI set \u2192 now 300', text(png, '.change'));
+  const thumb = c?.querySelector('img.thumb');
+  check('thumbnail is a small copy, not the full photo',
+    await until(() => thumb?.complete && thumb.naturalWidth === 160 && thumb.naturalHeight === 107),
+    `${thumb?.naturalWidth}x${thumb?.naturalHeight}`);
+
+  check('text file: skipped with a reason',
+    row('notes.txt')?.classList.contains('error')
+    && text(row('notes.txt'), '.detail') === 'Not a JPEG or PNG, so it was skipped.');
+  check('HEIC: skipped with advice', /HEIC photos aren.t supported yet/.test(text(row('IMG_0001.HEIC'), '.detail')));
+  check('skipped rows have no download link', !row('notes.txt')?.querySelector('a'));
+
+  // Single download: the link points at the converted bytes under the same name.
+  const save = b?.querySelector('a.save');
+  check('jpg: download link keeps the file name', save?.download === 'b.jpg', save?.download);
+  const saved = new Uint8Array(await (await fetch(save.href)).arrayBuffer());
+  check('jpg: downloaded file reads as 300 DPI', w.eval('DPI').readDpi(saved) === 300);
+
+  // Drop the same jpg again: same name, so it has to be renamed on the way out.
+  const dropDt = new DataTransfer();
+  dropDt.items.add(await fixture('b.jpg', 'image/jpeg'));
+  d.getElementById('drop').dispatchEvent(new DragEvent('drop', { dataTransfer: dropDt, bubbles: true, cancelable: true }));
+  check('drag and drop adds a sixth row', await until(() => rows().length === 6), `got ${rows().length}`);
+
+  // Share sheet (Save to Photos on an iPhone).
+  const shareBtn = d.getElementById('share');
+  check('Save to Photos shown where files can be shared', !shareBtn.hidden && !shareBtn.disabled);
+  shareBtn.click();
+  await until(() => shared);
+  const sharedNames = shared ? shared.files.map(x => x.name).join('|') : '';
+  check('shares the four good photos, duplicate renamed', sharedNames === 'a.png|b.jpg|c.jpg|b (2).jpg', sharedNames);
+  check('shared files carry image types', shared?.files.map(x => x.type).join('|') === 'image/png|image/jpeg|image/jpeg|image/jpeg');
+  if (shared) {
+    const bytes = new Uint8Array(await shared.files[2].arrayBuffer());
+    check('shared file reads as 300 DPI', w.eval('DPI').readDpi(bytes) === 300);
+  }
+  const notice = d.getElementById('notice');
+  shareFails = new DOMException('closed', 'AbortError');
+  shareBtn.click(); await sleep(100);
+  check('closing the share sheet shows no error', notice.hidden);
+  shareFails = new DOMException('too big', 'NotAllowedError');
+  shareBtn.click();
+  check('a failed share explains what to do instead', await until(() => !notice.hidden && /Download all/.test(notice.textContent)));
+
+  // Download all: intercept the click the app makes on its temporary link.
+  let clicked = null;
+  w.HTMLAnchorElement.prototype.click = function () { clicked = { href: this.href, download: this.download }; };
+  d.getElementById('download-all').click();
+  check('download all offers photos-300dpi.zip', clicked?.download === 'photos-300dpi.zip', clicked?.download);
+  if (clicked) {
+    const zip = await (await fetch(clicked.href)).arrayBuffer();
+    check('zip starts with the zip signature', new TextDecoder().decode(new Uint8Array(zip, 0, 2)) === 'PK');
+    await fetch('/__zip', { method: 'POST', body: zip });
+  }
+
+  d.getElementById('clear').click();
+  check('clear empties the list', rows().length === 0);
+  check('clear hides results and the notice', d.getElementById('results').hidden && notice.hidden);
+  check('download all disabled when empty', d.getElementById('download-all').disabled);
+
+  report();
+})().catch(e => report(`probe crashed: ${e.message}`));
+</script>
+</body>
+</html>
